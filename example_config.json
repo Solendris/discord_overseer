@@ -1,0 +1,24 @@
+{
+    "discord_webhook_url": "Your_webhook_url",
+    "monitored_threads": [
+        "Link1",
+        "Link2",
+        "Link3"
+    ],
+    "active_players": [
+        "Player1",
+        "Player2",
+        "Player3"
+    ],
+    "excluded_users": [
+        "Player4"
+    ],
+    "inactivity_threshold_days": 5,
+    "selectors": {
+        "post_container": "Your_post_container",
+        "username": "Your_username",
+        "post_date": "Your_post_date",
+        "pagination_prev": "Your_pagination_prev"
+    },
+    "date_format": "%d-%m-%Y, %H:%M"
+}
