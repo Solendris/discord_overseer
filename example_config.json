@@ -20,5 +20,10 @@
         "post_date": "Your_post_date",
         "pagination_prev": "Your_pagination_prev"
     },
-    "date_format": "%d-%m-%Y, %H:%M"
+    "date_format": "%d-%m-%Y, %H:%M",
+    "player_discord_role_ids": {
+        "Player1": "ID1",
+        "Player2": "ID2",
+        "Player3": "ID3"
+    }
 }

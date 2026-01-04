@@ -61,6 +61,10 @@ class Config:
     def selectors(self) -> dict:
         return self._data.get('selectors', {})
 
+    @property
+    def player_discord_role_ids(self) -> Dict[str, str]:
+        return self._data.get('player_discord_role_ids', {})
+
 class DateParser:
     @staticmethod
     def parse(date_str: str) -> Optional[datetime]:
@@ -227,19 +231,30 @@ class ReminderBot:
         for player, last_seen in last_seen_dates.items():
             date_fmt = '%d-%m-%Y'
             
+            # Identify the player's Discord mention (role) or bold name
+            role_id = self.config.player_discord_role_ids.get(player)
+            if role_id:
+                clean_id = str(role_id).lstrip('&')
+                # player_mention = f"<@&{clean_id}>" #for roles
+                player_mention = f"<@{clean_id}>" #for users
+            else:
+                player_mention = f"**{player}**"
+
+
+            
             if last_seen:
                 days_inactive = (today - last_seen).days
                 date_str = last_seen.strftime(date_fmt)
                 
                 if last_seen < threshold:
-                    msg = (f"🔔 **Przypomnienie**: Gracz **{player}** nieaktywny od "
+                    msg = (f"🔔 **Przypomnienie**: Gracz {player_mention} nieaktywny od "
                            f"{days_inactive} dni (Ostatni post: {date_str}).")
                     print(msg)
                     self.notifier.send(msg)
                 else:
                     print(f"OK: {player} (Ostatni post: {date_str}, {days_inactive} dni temu).")
             else:
-                msg = (f"⚠️ **Uwaga**: Gracz **{player}** nie napisał żadnego posta "
+                msg = (f"⚠️ **Uwaga**: Gracz {player_mention} nie napisał żadnego posta "
                        "w monitorowanych wątkach (sprawdzono ostatnie strony).")
                 print(msg)
                 self.notifier.send(msg)
