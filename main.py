@@ -253,7 +253,7 @@ class ReminderBot:
             
             if role_id:
                 clean_id = str(role_id).lstrip('&')
-                player_mention = f"<@{clean_id}>"
+                player_mention = f"<@&{clean_id}>"
             else:
                 player_mention = f"**{player}**"
             
