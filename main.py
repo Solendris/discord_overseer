@@ -86,6 +86,10 @@ class Config:
     def player_images(self) -> Dict[str, str]:
         return self._data.get('player_images', {})
 
+    @property
+    def image_threshold_days(self) -> int:
+        return self._data.get('image_threshold_days', 7)
+
 
 class DateParser:
     """Utility class for parsing various Polish date formats from the forum."""
@@ -278,13 +282,20 @@ class ReminderBot:
                 if last_seen < threshold:
                     msg = (f"🔔 **Przypomnienie**: Gracz {player_mention} nieaktywny od "
                            f"{days_inactive} dni (Ostatni post: {date_str}).")
-                    alerts.append((msg, self.config.player_images.get(player)))
+                    
+                    # Attach image only if days_inactive >= image_threshold_days
+                    image_path = None
+                    if days_inactive >= self.config.image_threshold_days:
+                        image_path = self.config.player_images.get(player)
+                        
+                    alerts.append((msg, image_path))
                     summary_log.append(msg)
                 else:
                     summary_log.append(f"OK: {player} (Ostatni post: {date_str}, {days_inactive} dni temu).")
             else:
                 msg = (f"⚠️ **Uwaga**: Gracz {player_mention} nie napisał żadnego posta "
                        "w monitorowanych wątkach (sprawdzono ostatnie strony).")
+                # For players with NO posts, we treat them as "maximum inactivity"
                 alerts.append((msg, self.config.player_images.get(player)))
                 summary_log.append(msg)
 
