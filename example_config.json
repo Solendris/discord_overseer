@@ -14,6 +14,8 @@
         "Player4"
     ],
     "inactivity_threshold_days": 5,
+    "check_interval_minutes": 1440,
+    "daily_run_time": "10:00",
     "selectors": {
         "post_container": "Your_post_container",
         "username": "Your_username",

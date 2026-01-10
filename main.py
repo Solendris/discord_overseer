@@ -74,6 +74,14 @@ class Config:
     def player_discord_role_ids(self) -> Dict[str, str]:
         return self._data.get('player_discord_role_ids', {})
 
+    @property
+    def check_interval_minutes(self) -> int:
+        return self._data.get('check_interval_minutes', 1440)
+
+    @property
+    def daily_run_time(self) -> str:
+        return self._data.get('daily_run_time', "10:00")
+
 
 class DateParser:
     """Utility class for parsing various Polish date formats from the forum."""
@@ -296,14 +304,15 @@ if __name__ == "__main__":
     # Check for Docker/Continuous environment variable
     if os.getenv('RUN_CONTINUOUSLY', 'false').lower() == 'true':
         import schedule
-        interval = int(os.getenv('CHECK_INTERVAL_MINUTES', '1440')) # Default to daily (1440 min)
+        interval = cfg.check_interval_minutes
         
         if interval < 1440:
             logging.info(f"Starting in continuous mode (Docker). Scheduled for run every {interval} minutes.")
             schedule.every(interval).minutes.do(bot.run)
         else:
-            logging.info("Starting in continuous mode (Docker). Scheduled for daily run at 10:00.")
-            schedule.every().day.at("10:00").do(bot.run)
+            run_time = cfg.daily_run_time
+            logging.info(f"Starting in continuous mode (Docker). Scheduled for daily run at {run_time}.")
+            schedule.every().day.at(run_time).do(bot.run)
 
         # Run once immediately on startup
         bot.run()
