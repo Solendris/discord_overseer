@@ -1,13 +1,12 @@
-version: '3.8'
-
 services:
-  discord-reminder:
+  discord-overseer:
     build: .
-    image: discord-reminder-bot:latest
-    container_name: discord_reminder
+    image: discord-overseer:latest
+    container_name: discord_overseer
     restart: unless-stopped
     environment:
       - RUN_CONTINUOUSLY=${RUN_CONTINUOUSLY:-true}
+      - CHECK_INTERVAL_MINUTES=${CHECK_INTERVAL_MINUTES:-1440}
       - TZ=Europe/Warsaw
     volumes:
       # Mount the config file so you can edit it on the NAS without rebuilding

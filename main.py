@@ -296,14 +296,17 @@ if __name__ == "__main__":
     # Check for Docker/Continuous environment variable
     if os.getenv('RUN_CONTINUOUSLY', 'false').lower() == 'true':
         import schedule
-        logging.info("Starting in continuous mode (Docker). Scheduled for daily run at 10:00.")
-
+        interval = int(os.getenv('CHECK_INTERVAL_MINUTES', '1440')) # Default to daily (1440 min)
         
+        if interval < 1440:
+            logging.info(f"Starting in continuous mode (Docker). Scheduled for run every {interval} minutes.")
+            schedule.every(interval).minutes.do(bot.run)
+        else:
+            logging.info("Starting in continuous mode (Docker). Scheduled for daily run at 10:00.")
+            schedule.every().day.at("10:00").do(bot.run)
+
         # Run once immediately on startup
         bot.run()
-        
-        # Schedule daily runs
-        schedule.every().day.at("10:00").do(bot.run)
         
         while True:
             schedule.run_pending()
