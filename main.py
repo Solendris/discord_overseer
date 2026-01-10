@@ -82,6 +82,10 @@ class Config:
     def daily_run_time(self) -> str:
         return self._data.get('daily_run_time', "10:00")
 
+    @property
+    def player_images(self) -> Dict[str, str]:
+        return self._data.get('player_images', {})
+
 
 class DateParser:
     """Utility class for parsing various Polish date formats from the forum."""
@@ -255,7 +259,7 @@ class ReminderBot:
         today = datetime.now()
         threshold = today - timedelta(days=self.config.threshold_days)
         
-        alerts = []
+        alerts = [] # List of (message, optional_image_path)
         summary_log = []
 
         for player, last_seen in last_seen_dates.items():
@@ -274,14 +278,14 @@ class ReminderBot:
                 if last_seen < threshold:
                     msg = (f"🔔 **Przypomnienie**: Gracz {player_mention} nieaktywny od "
                            f"{days_inactive} dni (Ostatni post: {date_str}).")
-                    alerts.append(msg)
+                    alerts.append((msg, self.config.player_images.get(player)))
                     summary_log.append(msg)
                 else:
                     summary_log.append(f"OK: {player} (Ostatni post: {date_str}, {days_inactive} dni temu).")
             else:
                 msg = (f"⚠️ **Uwaga**: Gracz {player_mention} nie napisał żadnego posta "
                        "w monitorowanych wątkach (sprawdzono ostatnie strony).")
-                alerts.append(msg)
+                alerts.append((msg, self.config.player_images.get(player)))
                 summary_log.append(msg)
 
         print("\n--- Summary ---")
@@ -290,8 +294,8 @@ class ReminderBot:
 
         if alerts:
             self.notifier.send(OVERSEER_MSG, image_path=OVERSEER_IMAGE)
-            for alert in alerts:
-                self.notifier.send(alert)
+            for alert, image in alerts:
+                self.notifier.send(alert, image_path=image)
 
 
 if __name__ == "__main__":

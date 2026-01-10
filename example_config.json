@@ -27,5 +27,10 @@
         "Player1": "ID1",
         "Player2": "ID2",
         "Player3": "ID3"
+    },
+    "player_images": {
+        "Player1": "images/player1.png",
+        "Player2": "images/player2.jpg",
+        "Player3": "images/player3.png"
     }
 }

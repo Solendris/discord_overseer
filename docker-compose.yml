@@ -12,6 +12,8 @@ services:
       - ./config.json:/app/config.json
       # Mount the overseer image so it can be updated
       - ./overseer.png:/app/overseer.png
+      # Mount player-specific images
+      - ./images:/app/images
     # Optional: Log rotation to save space on NAS
     logging:
       driver: "json-file"
