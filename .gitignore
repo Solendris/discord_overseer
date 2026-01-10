@@ -1,2 +1,13 @@
 /config.json
 url.txt
+src/__pycache__/__init__.cpython-313.pyc
+src/__pycache__/bot.cpython-313.pyc
+src/__pycache__/config.cpython-313.pyc
+.gitignore
+src/__pycache__/models.cpython-313.pyc
+src/__pycache__/notifier.cpython-313.pyc
+.gitignore
+.gitignore
+src/__pycache__/scraper.cpython-313.pyc
+src/__pycache__/utils.cpython-313.pyc
+VERIFICATION_REPORT.md
