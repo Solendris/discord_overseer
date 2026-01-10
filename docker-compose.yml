@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  discord-reminder:
+    build: .
+    image: discord-reminder-bot:latest
+    container_name: discord_reminder
+    restart: unless-stopped
+    environment:
+      - RUN_CONTINUOUSLY=${RUN_CONTINUOUSLY:-true}
+      - TZ=Europe/Warsaw
+    volumes:
+      # Mount the config file so you can edit it on the NAS without rebuilding
+      - ./config.json:/app/config.json
+      # Mount the overseer image so it can be updated
+      - ./overseer.png:/app/overseer.png
+    # Optional: Log rotation to save space on NAS
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

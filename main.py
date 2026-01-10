@@ -9,7 +9,9 @@ from typing import Dict, List, Optional, Set
 from urllib.parse import urljoin
 
 import requests
+import time
 from bs4 import BeautifulSoup
+
 
 # Configure logging
 logging.basicConfig(
@@ -290,6 +292,24 @@ if __name__ == "__main__":
     scrp = ForumScraper(cfg)
     
     bot = ReminderBot(config=cfg, notifier=ntf, scraper=scrp)
-    bot.run()
+
+    # Check for Docker/Continuous environment variable
+    if os.getenv('RUN_CONTINUOUSLY', 'false').lower() == 'true':
+        import schedule
+        logging.info("Starting in continuous mode (Docker). Scheduled for daily run at 10:00.")
+
+        
+        # Run once immediately on startup
+        bot.run()
+        
+        # Schedule daily runs
+        schedule.every().day.at("10:00").do(bot.run)
+        
+        while True:
+            schedule.run_pending()
+            time.sleep(60)
+    else:
+        # Standard run-once mode (e.g. for Windows Task Scheduler)
+        bot.run()
 
 
