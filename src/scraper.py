@@ -18,6 +18,10 @@ class ForumScraper:
         self.session.headers.update({'User-Agent': 'Mozilla/5.0'})
         self._page_cache: Dict[str, BeautifulSoup] = {}
 
+    def clear_cache(self):
+        """Clears the page cache to ensure fresh data."""
+        self._page_cache.clear()
+
     def get_user_post_in_thread(self, thread_url: str, username: str) -> Optional[Post]:
         """Finds the latest post by a specific user in a thread, searching backwards."""
         current_url = self._ensure_last_page_url(thread_url)

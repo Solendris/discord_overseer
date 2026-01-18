@@ -2,42 +2,38 @@
 
 # Colors for output
 GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${GREEN}Starting Discord Reminder Setup for Raspberry Pi...${NC}"
+echo -e "${GREEN}Starting Discord Reminder Setup for Raspberry Pi (Daemon Mode)...${NC}"
 
-# 1. Check for Docker
+# 1. Cleanup old mess
+echo -e "${YELLOW}Cleaning up old containers and cron jobs...${NC}"
+# Stop current containers
+docker compose down 2>/dev/null
+# Remove ghost containers
+docker ps -q --filter "ancestor=discord-overseer" | xargs -r docker stop
+docker ps -q --filter "ancestor=discord-overseer" | xargs -r docker rm
+# Remove cron jobs containing 'discord_reminder'
+crontab -l 2>/dev/null | grep -v "discord_reminder" | crontab -
+echo "Cleanup complete."
+
+# 2. Check for Docker
 if ! command -v docker &> /dev/null; then
     echo "Docker not found. Installing Docker..."
     curl -fsSL https://get.docker.com -o get-docker.sh
     sh get-docker.sh
     sudo usermod -aG docker $USER
-    echo "Docker installed. You might need to log out and back in for group changes to take effect."
+    echo "Docker installed. You need to log out and back in, then run this script again."
+    exit 1
 else
     echo -e "${GREEN}Docker is already installed.${NC}"
 fi
 
-# 2. Build/Pull the image
-echo "Building the Docker image..."
-docker compose build
+# 3. Build and Run in Background
+echo "Building and starting the service..."
+docker compose up -d --build
 
-# 3. Setup Scheduler (Optional)
-read -p "Do you want to setup a Cron job to run this every day at 10:00 AM? (y/n) " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    SCRIPT_PATH="$(pwd)/run_once.sh"
-    chmod +x "$SCRIPT_PATH"
-    
-    # Add to crontab if not exists
-    # 0 10 * * * = 10:00 AM daily
-    CRON_JOB="0 10 * * * $SCRIPT_PATH >> $(pwd)/cron.log 2>&1"
-    
-    (crontab -l 2>/dev/null; echo "$CRON_JOB") | crontab -
-    
-    echo -e "${GREEN}Cron job added!${NC}"
-    echo "Logs will be written to $(pwd)/cron.log"
-else
-    echo "Skipping Cron setup. You can run 'docker-compose up -d' to run it as a 24/7 daemon instead."
-fi
-
-echo -e "${GREEN}Setup complete!${NC}"
+echo -e "${GREEN}Setup complete! The bot is running in background.${NC}"
+echo "To check logs: docker compose logs -f"
+echo "To stop: docker compose down"

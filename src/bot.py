@@ -16,6 +16,9 @@ class ReminderBot:
 
     def run(self):
         """Executes the activity check and notification flow."""
+        # Clear cache to ensure fresh data in continuous mode
+        self.scraper.clear_cache()
+
         active_players = self.config.active_players
         last_seen_dates: Dict[str, Optional[datetime]] = {}
         
