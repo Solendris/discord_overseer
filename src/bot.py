@@ -21,11 +21,13 @@ class ReminderBot:
 
         active_players = self.config.active_players
         last_seen_dates: Dict[str, Optional[datetime]] = {}
+        gm_post_dates: Dict[str, Optional[datetime]] = {}  # Track when GM posted
         should_check_player: Dict[str, bool] = {}
         
         for player in active_players:
             logging.info(f"Searching activity for player: {player}")
             found_post = None
+            gm_post = None
             should_check = False
             
             for url in self.config.monitored_threads:
@@ -46,6 +48,7 @@ class ReminderBot:
                             # Check if player's post is BEFORE GM's post
                             if found_post.date < last_post_overall.date:
                                 logging.info(f"Player {player} hasn't responded to GM's post yet")
+                                gm_post = last_post_overall  # Save GM's post date
                                 should_check = True
                                 break
                             else:
@@ -53,6 +56,7 @@ class ReminderBot:
                         else:
                             # Player has no posts but GM posted - player should respond
                             logging.info(f"Player {player} has no posts, but GM is waiting for response")
+                            gm_post = last_post_overall  # Save GM's post date
                             should_check = True
                             break
                     else:
@@ -65,11 +69,13 @@ class ReminderBot:
                     break
             
             last_seen_dates[player] = found_post.date if found_post else None
+            gm_post_dates[player] = gm_post.date if gm_post else None
             should_check_player[player] = should_check
 
-        self._analyze_and_notify(last_seen_dates, should_check_player)
+        self._analyze_and_notify(last_seen_dates, gm_post_dates, should_check_player)
 
     def _analyze_and_notify(self, last_seen_dates: Dict[str, Optional[datetime]], 
+                            gm_post_dates: Dict[str, Optional[datetime]],
                             should_check_player: Dict[str, bool]):
         today = datetime.now()
         threshold = today - timedelta(days=self.config.threshold_days)
@@ -91,26 +97,35 @@ class ReminderBot:
             else:
                 player_mention = f"**{player}**"
             
-            if last_seen:
-                days_inactive = (today - last_seen).days
-                date_str = last_seen.strftime('%d-%m-%Y')
+            # Use GM post date if available, otherwise player's last seen
+            gm_post_date = gm_post_dates.get(player)
+            
+            if gm_post_date:
+                # GM is waiting for response - show how long GM has been waiting
+                days_waiting = (today - gm_post_date).days
+                gm_date_str = gm_post_date.strftime('%d-%m-%Y')
                 
-                if last_seen < threshold:
+                if gm_post_date < threshold:
                     msg = (
-                        f"🔔 **Przypomnienie**: Gracz {player_mention} "
-                        f"nieaktywny od {days_inactive} dni "
-                        f"(Ostatni post: {date_str})."
+                        f"🔔 **Przypomnienie**: Mistrz Gry czeka na odpowiedź gracza {player_mention} "
+                        f"od {days_waiting} dni "
+                        f"(Post MG: {gm_date_str})."
                     )
                     
-                    # Attach image only if days_inactive >= image_threshold_days
+                    # Attach image only if days_waiting >= image_threshold_days
                     image_path = None
-                    if days_inactive >= self.config.image_threshold_days:
+                    if days_waiting >= self.config.image_threshold_days:
                         image_path = self.config.player_images.get(player)
                         
                     alerts.append((msg, image_path))
                     summary_log.append(msg)
                 else:
-                    summary_log.append(f"OK: {player} (Ostatni post: {date_str}, {days_inactive} dni temu).")
+                    summary_log.append(f"OK: {player} (MG czekał {days_waiting} dni, ale poniżej progu).")
+            elif last_seen:
+                # Player has posts but GM is not waiting (shouldn't reach here if logic is correct)
+                days_inactive = (today - last_seen).days
+                date_str = last_seen.strftime('%d-%m-%Y')
+                summary_log.append(f"OK: {player} (Ostatni post: {date_str}, {days_inactive} dni temu, MG nie czeka).")
             else:
                 msg = (
                     f"⚠️ **Uwaga**: Gracz {player_mention} nie napisał "
