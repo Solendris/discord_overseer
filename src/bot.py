@@ -21,21 +21,56 @@ class ReminderBot:
 
         active_players = self.config.active_players
         last_seen_dates: Dict[str, Optional[datetime]] = {}
+        should_check_player: Dict[str, bool] = {}
         
         for player in active_players:
             logging.info(f"Searching activity for player: {player}")
             found_post = None
+            should_check = False
             
             for url in self.config.monitored_threads:
+                # Get the absolute last post in the thread
+                last_post_overall = self.scraper.get_last_post_in_thread(url)
+                
+                # Get the last post by this specific player
                 found_post = self.scraper.get_user_post_in_thread(url, player)
-                if found_post:
+                
+                if last_post_overall:
+                    # Check if the last post was written by an excluded user (e.g., GM)
+                    is_gm_post = last_post_overall.username in self.config.excluded_users
+                    
+                    if is_gm_post:
+                        logging.info(f"Last post in thread by GM ({last_post_overall.username})")
+                        
+                        if found_post:
+                            # Check if player's post is BEFORE GM's post
+                            if found_post.date < last_post_overall.date:
+                                logging.info(f"Player {player} hasn't responded to GM's post yet")
+                                should_check = True
+                                break
+                            else:
+                                logging.info(f"Player {player} already responded after GM's post")
+                        else:
+                            # Player has no posts but GM posted - player should respond
+                            logging.info(f"Player {player} has no posts, but GM is waiting for response")
+                            should_check = True
+                            break
+                    else:
+                        # Last post is by a player (not GM) - no need to remind
+                        logging.info(f"Last post by player ({last_post_overall.username}), no GM waiting for response")
+                        if found_post:
+                            break
+                elif found_post:
+                    # No posts in thread but player has a post (shouldn't happen, but handle it)
                     break
             
             last_seen_dates[player] = found_post.date if found_post else None
+            should_check_player[player] = should_check
 
-        self._analyze_and_notify(last_seen_dates)
+        self._analyze_and_notify(last_seen_dates, should_check_player)
 
-    def _analyze_and_notify(self, last_seen_dates: Dict[str, Optional[datetime]]):
+    def _analyze_and_notify(self, last_seen_dates: Dict[str, Optional[datetime]], 
+                            should_check_player: Dict[str, bool]):
         today = datetime.now()
         threshold = today - timedelta(days=self.config.threshold_days)
         
@@ -43,6 +78,11 @@ class ReminderBot:
         summary_log = []
 
         for player, last_seen in last_seen_dates.items():
+            # Skip if we determined that GM is not waiting for this player's response
+            if not should_check_player.get(player, False):
+                logging.info(f"Skipping {player} - no GM response pending")
+                summary_log.append(f"OK: {player} - gracz już odpowiedział lub MG nie czeka na odpowiedź.")
+                continue
             role_id = self.config.player_discord_role_ids.get(player)
             
             if role_id:

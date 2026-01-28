@@ -55,6 +55,36 @@ class ForumScraper:
             
         return None
 
+    def get_last_post_in_thread(self, thread_url: str) -> Optional[Post]:
+        """Finds the absolute last post in a thread (regardless of author)."""
+        current_url = self._ensure_last_page_url(thread_url)
+        
+        if current_url in self._page_cache:
+            logging.debug(f"Using cached page for {current_url}")
+            soup = self._page_cache[current_url]
+        else:
+            logging.info(f"Fetching last page to find last post in thread...")
+            try:
+                response = self.session.get(current_url, allow_redirects=True)
+                response.raise_for_status()
+                current_url = response.url
+                soup = BeautifulSoup(response.text, 'html.parser')
+                self._page_cache[current_url] = soup
+            except requests.RequestException as e:
+                logging.error(f"Error fetching {current_url}: {e}")
+                return None
+        
+        # Get all posts and return the last one
+        page_containers = soup.select(self.config.selectors['post_container'])
+        if page_containers:
+            last_container = page_containers[-1]  # Last post on the last page
+            post = self._parse_single_post(last_container)
+            if post:
+                logging.info(f"Last post in thread by: {post.username} on {post.date.strftime('%d-%m-%Y')}")
+            return post
+        
+        return None
+
     def _parse_single_post(self, container: BeautifulSoup) -> Optional[Post]:
         selectors = self.config.selectors
         user_elem = container.select_one(selectors['username'])
