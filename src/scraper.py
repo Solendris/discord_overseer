@@ -8,11 +8,21 @@ from .config import Config
 from .models import Post
 from .utils import DateParser
 
+
 class ForumScraper:
-    """Scrapes forum threads to find user activity."""
+    """Scrapes forum threads to find user activity.
+    
+    Attributes:
+        MAX_PAGES: Maximum number of pages to check when searching backwards
+    """
     MAX_PAGES = 2
 
     def __init__(self, config: Config):
+        """Initialize the scraper with configuration.
+        
+        Args:
+            config: Application configuration
+        """
         self.config = config
         self.session = requests.Session()
         self.session.headers.update({'User-Agent': 'Mozilla/5.0'})
@@ -23,25 +33,24 @@ class ForumScraper:
         self._page_cache.clear()
 
     def get_user_post_in_thread(self, thread_url: str, username: str) -> Optional[Post]:
-        """Finds the latest post by a specific user in a thread, searching backwards."""
+        """Finds the latest post by a specific user in a thread.
+        
+        Searches backwards through the last MAX_PAGES pages of the thread.
+        
+        Args:
+            thread_url: URL of the forum thread
+            username: Username to search for
+            
+        Returns:
+            Most recent Post by the user, or None if not found
+        """
         current_url = self._ensure_last_page_url(thread_url)
         pages_checked = 0
 
         while pages_checked < self.MAX_PAGES and current_url:
-            if current_url in self._page_cache:
-                logging.debug(f"Using cached page for {current_url}")
-                soup = self._page_cache[current_url]
-            else:
-                logging.info(f"Checking {current_url} for user {username}...")
-                try:
-                    response = self.session.get(current_url, allow_redirects=True)
-                    response.raise_for_status()
-                    current_url = response.url
-                    soup = BeautifulSoup(response.text, 'html.parser')
-                    self._page_cache[current_url] = soup
-                except requests.RequestException as e:
-                    logging.error(f"Error fetching {current_url}: {e}")
-                    break
+            soup = self._fetch_page(current_url, username)
+            if not soup:
+                break
 
             page_containers = soup.select(self.config.selectors['post_container'])
             for container in reversed(page_containers):
@@ -56,29 +65,23 @@ class ForumScraper:
         return None
 
     def get_last_post_in_thread(self, thread_url: str) -> Optional[Post]:
-        """Finds the absolute last post in a thread (regardless of author)."""
+        """Finds the absolute last post in a thread (regardless of author).
+        
+        Args:
+            thread_url: URL of the forum thread
+            
+        Returns:
+            Last Post in the thread, or None if no valid posts found
+        """
         current_url = self._ensure_last_page_url(thread_url)
+        soup = self._fetch_page(current_url, "last post")
         
-        if current_url in self._page_cache:
-            logging.debug(f"Using cached page for {current_url}")
-            soup = self._page_cache[current_url]
-        else:
-            logging.info(f"Fetching last page to find last post in thread...")
-            try:
-                response = self.session.get(current_url, allow_redirects=True)
-                response.raise_for_status()
-                current_url = response.url
-                soup = BeautifulSoup(response.text, 'html.parser')
-                self._page_cache[current_url] = soup
-            except requests.RequestException as e:
-                logging.error(f"Error fetching {current_url}: {e}")
-                return None
+        if not soup:
+            return None
         
-        # Get all posts and return the last one that can be parsed
         page_containers = soup.select(self.config.selectors['post_container'])
         logging.info(f"Found {len(page_containers)} posts on last page")
         
-        # Iterate backwards to find the last valid post (same logic as get_user_post_in_thread)
         for container in reversed(page_containers):
             post = self._parse_single_post(container)
             if post:
@@ -88,7 +91,45 @@ class ForumScraper:
         logging.warning(f"Could not parse any posts on last page - check selectors")
         return None
 
+    def _fetch_page(self, url: str, context: str = "") -> Optional[BeautifulSoup]:
+        """Fetch and cache a page from the forum.
+        
+        Args:
+            url: URL to fetch
+            context: Context string for logging (e.g., username or "last post")
+            
+        Returns:
+            BeautifulSoup object or None if fetch failed
+        """
+        if url in self._page_cache:
+            logging.debug(f"Using cached page for {url}")
+            return self._page_cache[url]
+        
+        log_msg = f"Fetching {url}"
+        if context:
+            log_msg += f" for {context}"
+        logging.info(log_msg + "...")
+        
+        try:
+            response = self.session.get(url, allow_redirects=True)
+            response.raise_for_status()
+            actual_url = response.url
+            soup = BeautifulSoup(response.text, 'html.parser')
+            self._page_cache[actual_url] = soup
+            return soup
+        except requests.RequestException as e:
+            logging.error(f"Error fetching {url}: {e}")
+            return None
+
     def _parse_single_post(self, container: BeautifulSoup) -> Optional[Post]:
+        """Parse a single post container into a Post object.
+        
+        Args:
+            container: BeautifulSoup element containing a post
+            
+        Returns:
+            Post object or None if parsing failed
+        """
         selectors = self.config.selectors
         user_elem = container.select_one(selectors['username'])
         date_elem = container.select_one(selectors['post_date'])
@@ -111,12 +152,29 @@ class ForumScraper:
         )
 
     def _ensure_last_page_url(self, url: str) -> str:
+        """Ensure URL points to the last page of a thread.
+        
+        Args:
+            url: Thread URL
+            
+        Returns:
+            URL modified to point to last page
+        """
         if 'action=lastpost' not in url and 'page=' not in url:
             separator = '&' if '?' in url else '?'
             return f"{url}{separator}action=lastpost"
         return url
 
     def _get_previous_page_url(self, soup: BeautifulSoup, base_url: str) -> Optional[str]:
+        """Extract the previous page URL from pagination links.
+        
+        Args:
+            soup: BeautifulSoup object of current page
+            base_url: Base URL for resolving relative links
+            
+        Returns:
+            URL of previous page or None if not found
+        """
         prev_selector = self.config.selectors.get('pagination_prev')
         if not prev_selector:
             return None
