@@ -76,12 +76,17 @@ class ForumScraper:
         
         # Get all posts and return the last one
         page_containers = soup.select(self.config.selectors['post_container'])
+        logging.info(f"Found {len(page_containers)} posts on last page")
         if page_containers:
             last_container = page_containers[-1]  # Last post on the last page
             post = self._parse_single_post(last_container)
             if post:
                 logging.info(f"Last post in thread by: {post.username} on {post.date.strftime('%d-%m-%Y')}")
+            else:
+                logging.warning(f"Could not parse last post - check selectors")
             return post
+        else:
+            logging.warning(f"No posts found on last page - check selector: {self.config.selectors['post_container']}")
         
         return None
 
