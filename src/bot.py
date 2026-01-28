@@ -38,8 +38,8 @@ class ReminderBot:
                 found_post = self.scraper.get_user_post_in_thread(url, player)
                 
                 if last_post_overall:
-                    # Check if the last post was written by an excluded user (e.g., GM)
-                    is_gm_post = last_post_overall.username in self.config.excluded_users
+                    # Check if the last post was written by a Game Master
+                    is_gm_post = last_post_overall.username in self.config.game_masters
                     
                     if is_gm_post:
                         logging.info(f"Last post in thread by GM ({last_post_overall.username})")

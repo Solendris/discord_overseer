@@ -34,8 +34,9 @@ class Config:
         return set(self._data.get('active_players', []))
 
     @property
-    def excluded_users(self) -> List[str]:
-        return self._data.get('excluded_users', [])
+    def game_masters(self) -> List[str]:
+        """List of Game Master usernames to check for responses."""
+        return self._data.get('game_masters', [])
 
     @property
     def threshold_days(self) -> int:
