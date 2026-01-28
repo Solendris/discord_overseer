@@ -30,49 +30,41 @@ class ReminderBot:
             gm_post = None
             should_check = False
             
+            # Search all threads for player's most recent post (original logic)
             for url in self.config.monitored_threads:
-                # Get the absolute last post in the thread
-                last_post_overall = self.scraper.get_last_post_in_thread(url)
-                
-                # Get the last post by this specific player
-                found_post = self.scraper.get_user_post_in_thread(url, player)
-                
-                if last_post_overall:
-                    # Check if the last post was written by a Game Master
-                    is_gm_post = last_post_overall.username in self.config.game_masters
+                player_post = self.scraper.get_user_post_in_thread(url, player)
+                if player_post:
+                    # Found player's post in this thread
+                    # Now check if GM posted AFTER this player in the SAME thread
+                    last_post_in_thread = self.scraper.get_last_post_in_thread(url)
                     
-                    if is_gm_post:
-                        logging.info(f"Last post in thread by GM ({last_post_overall.username})")
+                    if last_post_in_thread:
+                        is_gm_post = last_post_in_thread.username in self.config.game_masters
                         
-                        if found_post:
-                            # Check if player's post is BEFORE GM's post
-                            if found_post.date < last_post_overall.date:
-                                logging.info(f"Player {player} hasn't responded to GM's post yet")
-                                gm_post = last_post_overall  # Save GM's post date
-                                should_check = True
-                                break
-                            else:
-                                logging.info(f"Player {player} already responded after GM's post")
-                                break  # Player already responded, no need to check other threads
-                        else:
-                            # Player has no posts but GM posted - player should respond
-                            logging.info(f"Player {player} has no posts, but GM is waiting for response")
-                            gm_post = last_post_overall  # Save GM's post date
+                        if is_gm_post and player_post.date < last_post_in_thread.date:
+                            # GM posted after player - player needs to respond
+                            logging.info(f"In thread {url}: GM ({last_post_in_thread.username}) posted after {player}")
+                            found_post = player_post
+                            gm_post = last_post_in_thread
                             should_check = True
-                            break
+                            break  # Found a thread where GM is waiting for this player
+                        elif not is_gm_post or player_post.date >= last_post_in_thread.date:
+                            # Player responded after GM, or last post is not GM
+                            logging.info(f"In thread {url}: {player} is up to date (last: {last_post_in_thread.username})")
+                            if found_post is None or player_post.date > found_post.date:
+                                # Keep track of most recent player post
+                                found_post = player_post
                     else:
-                        # Last post is by a player (not GM) - no need to remind
-                        logging.info(f"Last post by player ({last_post_overall.username}), no GM waiting for response")
-                        if found_post:
-                            break
-                elif found_post:
-                    # No posts in thread but player has a post (shouldn't happen, but handle it)
-                    break
+                        # No parseable posts in thread
+                        if found_post is None:
+                            found_post = player_post
             
             last_seen_dates[player] = found_post.date if found_post else None
             gm_post_dates[player] = gm_post.date if gm_post else None
             should_check_player[player] = should_check
             logging.info(f"Final decision for {player}: should_check={should_check}, gm_post={'Yes' if gm_post else 'No'}")
+
+
 
         self._analyze_and_notify(last_seen_dates, gm_post_dates, should_check_player)
 
