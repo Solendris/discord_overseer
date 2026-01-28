@@ -74,20 +74,18 @@ class ForumScraper:
                 logging.error(f"Error fetching {current_url}: {e}")
                 return None
         
-        # Get all posts and return the last one
+        # Get all posts and return the last one that can be parsed
         page_containers = soup.select(self.config.selectors['post_container'])
         logging.info(f"Found {len(page_containers)} posts on last page")
-        if page_containers:
-            last_container = page_containers[-1]  # Last post on the last page
-            post = self._parse_single_post(last_container)
+        
+        # Iterate backwards to find the last valid post (same logic as get_user_post_in_thread)
+        for container in reversed(page_containers):
+            post = self._parse_single_post(container)
             if post:
                 logging.info(f"Last post in thread by: {post.username} on {post.date.strftime('%d-%m-%Y')}")
-            else:
-                logging.warning(f"Could not parse last post - check selectors")
-            return post
-        else:
-            logging.warning(f"No posts found on last page - check selector: {self.config.selectors['post_container']}")
+                return post
         
+        logging.warning(f"Could not parse any posts on last page - check selectors")
         return None
 
     def _parse_single_post(self, container: BeautifulSoup) -> Optional[Post]:
@@ -95,11 +93,16 @@ class ForumScraper:
         user_elem = container.select_one(selectors['username'])
         date_elem = container.select_one(selectors['post_date'])
 
-        if not user_elem or not date_elem:
+        if not user_elem:
+            logging.debug(f"Could not find username with selector: {selectors['username']}")
+            return None
+        if not date_elem:
+            logging.debug(f"Could not find date with selector: {selectors['post_date']}")
             return None
 
         parsed_date = DateParser.parse(date_elem.text.strip())
         if not parsed_date:
+            logging.debug(f"Could not parse date: '{date_elem.text.strip()}'")
             return None
 
         return Post(
