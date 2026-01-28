@@ -53,6 +53,7 @@ class ReminderBot:
                                 break
                             else:
                                 logging.info(f"Player {player} already responded after GM's post")
+                                break  # Player already responded, no need to check other threads
                         else:
                             # Player has no posts but GM posted - player should respond
                             logging.info(f"Player {player} has no posts, but GM is waiting for response")
@@ -71,6 +72,7 @@ class ReminderBot:
             last_seen_dates[player] = found_post.date if found_post else None
             gm_post_dates[player] = gm_post.date if gm_post else None
             should_check_player[player] = should_check
+            logging.info(f"Final decision for {player}: should_check={should_check}, gm_post={'Yes' if gm_post else 'No'}")
 
         self._analyze_and_notify(last_seen_dates, gm_post_dates, should_check_player)
 
