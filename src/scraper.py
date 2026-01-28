@@ -29,8 +29,11 @@ class ForumScraper:
         self._page_cache: Dict[str, BeautifulSoup] = {}
 
     def clear_cache(self):
-        """Clears the page cache to ensure fresh data."""
+        """Clears the page cache and resets the session to ensure fresh data and free memory."""
         self._page_cache.clear()
+        self.session.close()
+        self.session = requests.Session()
+        self.session.headers.update({'User-Agent': 'Mozilla/5.0'})
 
     def get_user_post_in_thread(self, thread_url: str, username: str) -> Optional[Post]:
         """Finds the latest post by a specific user in a thread.

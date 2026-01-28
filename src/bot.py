@@ -17,10 +17,13 @@ class ReminderBot:
 
     def run(self):
         """Executes the activity check and notification flow."""
-        self.scraper.clear_cache()
+        try:
+            self.scraper.clear_cache()
 
-        player_statuses = self._check_all_players()
-        self._analyze_and_notify(player_statuses)
+            player_statuses = self._check_all_players()
+            self._analyze_and_notify(player_statuses)
+        finally:
+            self.scraper.clear_cache()
 
     def _check_all_players(self) -> Dict[str, Dict]:
         """Check activity status for all active players.
