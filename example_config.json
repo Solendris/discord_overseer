@@ -10,14 +10,12 @@
         "Player2",
         "Player3"
     ],
-    "excluded_users": [
-        "Player4"
+    "game_masters": [
+        "GM_Name"
     ],
     "inactivity_threshold_days": 5,
     "check_interval_minutes": 1440,
     "image_threshold_days": 7,
-    "overseer_image": "overseer.png",
-    "overseer_message": "**Nadzorca rozpoczyna inspekcję aktywności...**",
     "daily_run_time": "10:00",
     "selectors": {
         "post_container": "Your_post_container",
