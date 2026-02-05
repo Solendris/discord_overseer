@@ -221,13 +221,12 @@ class ReminderBot:
         Returns:
             Tuple of (message, image_path)
         """
-        days_waiting = (today - gm_post_date).days
+        days_waiting = (today.date() - gm_post_date.date()).days
         gm_date_str = gm_post_date.strftime('%d-%m-%Y')
         
         msg = (
             f"🔔 **Przypomnienie**: Mistrz Gry czeka na odpowiedź gracza {player_mention} "
-            f"od {days_waiting} dni "
-            f"(Post MG: {gm_date_str})."
+            f"od {days_waiting} dni (Post MG: {gm_date_str})."
         )
         
         image_path = None
