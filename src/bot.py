@@ -170,7 +170,7 @@ class ReminderBot:
             return {'alert': True, 'message': msg, 'image': img, 'summary': None}
         
         elif gm_post_date:
-            days_waiting = (today - gm_post_date).days
+            days_waiting = (today.date() - gm_post_date.date()).days
             return {
                 'alert': False, 
                 'message': None, 
@@ -179,7 +179,7 @@ class ReminderBot:
             }
         
         elif last_seen:
-            days_inactive = (today - last_seen).days
+            days_inactive = (today.date() - last_seen.date()).days
             date_str = last_seen.strftime('%d-%m-%Y')
             return {
                 'alert': False,
