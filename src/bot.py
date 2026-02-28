@@ -165,7 +165,7 @@ class ReminderBot:
         gm_post_date = status['gm_post_date']
         last_seen = status['last_seen']
         
-        if gm_post_date and gm_post_date < threshold:
+        if gm_post_date and gm_post_date <= threshold:
             msg, img = self._build_gm_waiting_alert(player, player_mention, gm_post_date, today)
             return {'alert': True, 'message': msg, 'image': img, 'summary': None}
         
