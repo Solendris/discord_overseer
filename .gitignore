@@ -10,3 +10,8 @@ src/__pycache__/utils.cpython-313.pyc
 to_do_draft.md
 tests/__pycache__/__init__.cpython-313.pyc
 tests/__pycache__/test_bot.cpython-313-pytest-8.3.4.pyc
+tests/__pycache__/test_config.cpython-313-pytest-8.3.4.pyc
+tests/__pycache__/test_notifier.cpython-313-pytest-8.3.4.pyc
+tests/__pycache__/test_scrapper.cpython-313-pytest-8.3.4.pyc
+tests/__pycache__/test_utilis.cpython-313-pytest-8.3.4.pyc
+.coverage
