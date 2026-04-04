@@ -2,13 +2,11 @@
 url.txt
 src/__pycache__/__init__.cpython-313.pyc
 src/__pycache__/bot.cpython-313.pyc
-.gitignore
 src/__pycache__/config.cpython-313.pyc
 src/__pycache__/models.cpython-313.pyc
-.gitignore
 src/__pycache__/notifier.cpython-313.pyc
 src/__pycache__/scraper.cpython-313.pyc
-.gitignore
 src/__pycache__/utils.cpython-313.pyc
-VERIFICATION_REPORT.md
 to_do_draft.md
+tests/__pycache__/__init__.cpython-313.pyc
+tests/__pycache__/test_bot.cpython-313-pytest-8.3.4.pyc
