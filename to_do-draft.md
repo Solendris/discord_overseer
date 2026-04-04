@@ -1,3 +1,1 @@
-Trzeba zrobić tak, by skrypt rozróżniał, czy post asprawdzanej osoby ma odpowiedź mistrza gry czy nie.
-autor == gracz - nic nie rób
-autor == mg - sprawdź czas
+zmodyfikowac discord-overseer tak, by naliczał tez czas w nowo otwartym watku (bez odpowiedzi od gracza w nim jeszcze, tylko zaczetego przez MG)
