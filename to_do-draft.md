@@ -1,1 +1,0 @@
-zmodyfikowac discord-overseer tak, by naliczał tez czas w nowo otwartym watku (bez odpowiedzi od gracza w nim jeszcze, tylko zaczetego przez MG)
