@@ -4,12 +4,10 @@ import requests
 from typing import Optional
 
 class DiscordNotifier:
-    """Handles sending notifications to Discord via Webhooks."""
     def __init__(self, webhook_url: str):
         self.webhook_url = webhook_url
 
     def send(self, message: str, image_path: Optional[str] = None) -> None:
-        """Sends a text message and optional image to a Discord Webhook."""
         if not self.webhook_url:
             logging.warning("No webhook URL configured.")
             return

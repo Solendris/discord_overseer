@@ -7,16 +7,13 @@ from .notifier import DiscordNotifier
 from .scraper import ForumScraper, Post
 
 
-class ReminderBot:
-    """Orchestrates the process of checking player activity and notifying via Discord."""
-    
+class ReminderBot:    
     def __init__(self, config: Config, notifier: DiscordNotifier, scraper: ForumScraper):
         self.config = config
         self.notifier = notifier
         self.scraper = scraper
 
     def run(self):
-        """Executes the activity check and notification flow."""
         try:
             self.scraper.clear_cache()
 
@@ -26,11 +23,6 @@ class ReminderBot:
             self.scraper.clear_cache()
 
     def _check_all_players(self) -> Dict[str, Dict]:
-        """Check activity status for all active players.
-        
-        Returns:
-            Dict with player names as keys and status dicts as values
-        """
         player_statuses = {}
         
         for player in self.config.active_players:
@@ -46,14 +38,6 @@ class ReminderBot:
         return player_statuses
 
     def _check_player_status(self, player: str) -> Dict:
-        """Check player's activity status across all monitored threads.
-        
-        Args:
-            player: Player name to check
-            
-        Returns:
-            Dict with keys: last_seen, gm_post_date, should_check
-        """
         found_post = None
         gm_post = None
         should_check = False
@@ -81,17 +65,6 @@ class ReminderBot:
 
     def _is_gm_waiting_for_player(self, player: str, player_post: Post, 
                                    last_post: Optional[Post], url: str) -> bool:
-        """Check if GM is waiting for player's response in a thread.
-        
-        Args:
-            player: Player name
-            player_post: Player's post in the thread
-            last_post: Last post in the thread (any author)
-            url: Thread URL
-            
-        Returns:
-            True if GM posted after player and is waiting for response
-        """
         if not last_post:
             return False
         
@@ -106,25 +79,11 @@ class ReminderBot:
         return gm_waiting
 
     def _keep_most_recent(self, current: Optional[Post], new: Post) -> Post:
-        """Keep track of the most recent post.
-        
-        Args:
-            current: Current most recent post (or None)
-            new: New post to compare
-            
-        Returns:
-            The most recent post
-        """
         if current is None or new.date > current.date:
             return new
         return current
 
     def _analyze_and_notify(self, player_statuses: Dict[str, Dict]):
-        """Analyze player data and send notifications if needed.
-        
-        Args:
-            player_statuses: Dict mapping player names to their status dicts
-        """
         today = datetime.now()
         threshold = today - timedelta(days=self.config.threshold_days)
         
@@ -150,17 +109,6 @@ class ReminderBot:
 
     def _process_player_alert(self, player: str, status: Dict, 
                               today: datetime, threshold: datetime) -> Dict:
-        """Process a single player and determine if alert is needed.
-        
-        Args:
-            player: Player name
-            status: Player status dict
-            today: Current datetime
-            threshold: Alert threshold datetime
-            
-        Returns:
-            Dict with keys: alert (bool), message, image, summary
-        """
         player_mention = self._get_player_mention(player)
         gm_post_date = status['gm_post_date']
         last_seen = status['last_seen']
@@ -194,14 +142,6 @@ class ReminderBot:
             return {'alert': True, 'message': msg, 'image': img, 'summary': None}
 
     def _get_player_mention(self, player: str) -> str:
-        """Get Discord mention string for a player.
-        
-        Args:
-            player: Player name
-            
-        Returns:
-            Discord mention string or bolded name
-        """
         role_id = self.config.player_discord_role_ids.get(player)
         if role_id:
             clean_id = str(role_id).lstrip('&')
@@ -210,17 +150,6 @@ class ReminderBot:
 
     def _build_gm_waiting_alert(self, player: str, player_mention: str, 
                                 gm_post_date: datetime, today: datetime) -> Tuple[str, Optional[str]]:
-        """Build alert message when GM is waiting for player response.
-        
-        Args:
-            player: Player name
-            player_mention: Discord mention string
-            gm_post_date: Date when GM posted
-            today: Current datetime
-            
-        Returns:
-            Tuple of (message, image_path)
-        """
         days_waiting = (today.date() - gm_post_date.date()).days
         gm_date_str = gm_post_date.strftime('%d-%m-%Y')
         
@@ -236,14 +165,6 @@ class ReminderBot:
         return msg, image_path
 
     def _build_no_posts_alert(self, player_mention: str) -> str:
-        """Build alert message when player has no posts.
-        
-        Args:
-            player_mention: Discord mention string
-            
-        Returns:
-            Alert message
-        """
         return (
             f"⚠️ **Uwaga**: Gracz {player_mention} nie napisał "
             f"żadnego posta w monitorowanych wątkach "
@@ -251,11 +172,6 @@ class ReminderBot:
         )
 
     def _log_summary(self, summary_log: List[str]):
-        """Log summary of all player checks.
-        
-        Args:
-            summary_log: List of summary messages
-        """
         logging.info("\n--- Summary ---")
         for line in summary_log:
             logging.info(line)
