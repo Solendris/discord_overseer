@@ -26,8 +26,11 @@ class Config:
         return self._data.get('discord_webhook_url', '')
 
     @property
-    def monitored_threads(self) -> List[str]:
-        return self._data.get('monitored_threads', [])
+    def monitored_threads(self) -> Dict[str, List[str]]:
+        raw_threads = self._data.get('monitored_threads', {})
+        if isinstance(raw_threads, list):
+            return {url: ["auto"] for url in raw_threads}
+        return raw_threads
 
     @property
     def active_players(self) -> Set[str]:

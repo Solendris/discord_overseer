@@ -42,9 +42,12 @@ class ReminderBot:
         gm_post = None
         should_check = False
         
-        for url in self.config.monitored_threads:
+        for url, assigned_players in self.config.monitored_threads.items():
+            if "auto" not in assigned_players and player not in assigned_players and "all" not in assigned_players:
+                continue
+                
             player_post = self.scraper.get_user_post_in_thread(url, player)
-            if not player_post:
+            if not player_post and "auto" in assigned_players:
                 continue
             
             last_post = self.scraper.get_last_post_in_thread(url)
@@ -55,7 +58,8 @@ class ReminderBot:
                 should_check = True
                 break
             else:
-                found_post = self._keep_most_recent(found_post, player_post)
+                if player_post:
+                    found_post = self._keep_most_recent(found_post, player_post)
         
         return {
             'last_seen': found_post.date if found_post else None,
@@ -63,16 +67,22 @@ class ReminderBot:
             'should_check': should_check
         }
 
-    def _is_gm_waiting_for_player(self, player: str, player_post: Post, 
+    def _is_gm_waiting_for_player(self, player: str, player_post: Optional[Post], 
                                    last_post: Optional[Post], url: str) -> bool:
         if not last_post:
             return False
         
         is_gm = last_post.username in self.config.game_masters
-        gm_waiting = is_gm and player_post.date < last_post.date
+        if not is_gm:
+            return False
+            
+        if not player_post:
+            gm_waiting = True
+        else:
+            gm_waiting = player_post.date < last_post.date
         
         if gm_waiting:
-            logging.info(f"In thread {url}: GM ({last_post.username}) posted after {player}")
+            logging.info(f"In thread {url}: GM ({last_post.username}) is waiting for {player}")
         else:
             logging.info(f"In thread {url}: {player} is up to date (last: {last_post.username})")
         
@@ -113,7 +123,7 @@ class ReminderBot:
         gm_post_date = status['gm_post_date']
         last_seen = status['last_seen']
         
-        if gm_post_date.date() and gm_post_date.date() <= threshold.date():
+        if gm_post_date and gm_post_date.date() <= threshold.date():
             msg, img = self._build_gm_waiting_alert(player, player_mention, gm_post_date, today)
             return {'alert': True, 'message': msg, 'image': img, 'summary': None}
         

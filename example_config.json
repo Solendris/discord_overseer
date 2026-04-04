@@ -1,10 +1,17 @@
 {
     "discord_webhook_url": "Your_webhook_url",
-    "monitored_threads": [
-        "Link1",
-        "Link2",
-        "Link3"
-    ],
+    "monitored_threads": {
+        "Link1_Otwarta_Karczma_Albo_Stary_Format": [
+            "auto"
+        ],
+        "Link2_Nowa_Solowka_Dla_Dwoch_Graczy": [
+            "Player1",
+            "Player3"
+        ],
+        "Link3_Nowy_Watek_Dla_Calej_Druzyny": [
+            "all"
+        ]
+    },
     "active_players": [
         "Player1",
         "Player2",
