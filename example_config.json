@@ -23,6 +23,7 @@
     "inactivity_threshold_days": 5,
     "check_interval_minutes": 1440,
     "image_threshold_days": 7,
+    "image_threshold_days_tier2": 14,
     "daily_run_time": "10:00",
     "selectors": {
         "post_container": "Your_post_container",
@@ -40,5 +41,10 @@
         "Player1": "images/player1.png",
         "Player2": "images/player2.jpg",
         "Player3": "images/player3.png"
+    },
+    "player_images_tier2": {
+        "Player1": "images/player1_tier2.png",
+        "Player2": "images/player2_tier2.jpg",
+        "Player3": "images/player3_tier2.png"
     }
 }

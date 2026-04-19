@@ -15,3 +15,7 @@ tests/__pycache__/test_notifier.cpython-313-pytest-8.3.4.pyc
 tests/__pycache__/test_scrapper.cpython-313-pytest-8.3.4.pyc
 tests/__pycache__/test_utilis.cpython-313-pytest-8.3.4.pyc
 .coverage
+images/
+.venv/
+venv/
+*.log

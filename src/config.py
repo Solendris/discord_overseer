@@ -69,6 +69,14 @@ class Config:
         return self._data.get('image_threshold_days', 7)
 
     @property
+    def image_threshold_days_tier2(self) -> int:
+        return self._data.get('image_threshold_days_tier2', 10)
+
+    @property
+    def player_images_tier2(self) -> Dict[str, str]:
+        return self._data.get('player_images_tier2', {})
+
+    @property
     def overseer_image(self) -> str:
         return self._data.get('overseer_image', 'overseer.png')
 

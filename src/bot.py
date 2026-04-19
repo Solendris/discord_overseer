@@ -110,6 +110,8 @@ class ReminderBot:
             
             if alert_data['alert']:
                 alerts.append((alert_data['message'], alert_data['image']))
+                if alert_data.get('image_tier2'):
+                    alerts.append(("", alert_data['image_tier2']))
                 summary_log.append(alert_data['message'])
             elif alert_data['summary']:
                 summary_log.append(alert_data['summary'])
@@ -121,11 +123,10 @@ class ReminderBot:
                               today: datetime, threshold: datetime) -> Dict:
         player_mention = self._get_player_mention(player)
         gm_post_date = status['gm_post_date']
-        last_seen = status['last_seen']
         
         if gm_post_date and gm_post_date.date() <= threshold.date():
-            msg, img = self._build_gm_waiting_alert(player, player_mention, gm_post_date, today)
-            return {'alert': True, 'message': msg, 'image': img, 'summary': None}
+            msg, img, img_tier2 = self._build_gm_waiting_alert(player, player_mention, gm_post_date, today)
+            return {'alert': True, 'message': msg, 'image': img, 'image_tier2': img_tier2, 'summary': None}
         
         elif gm_post_date:
             days_waiting = (today.date() - gm_post_date.date()).days
@@ -133,23 +134,11 @@ class ReminderBot:
                 'alert': False, 
                 'message': None, 
                 'image': None,
+                'image_tier2': None,
                 'summary': f"OK: {player} (MG czekał {days_waiting} dni, ale poniżej progu)."
             }
-        
-        elif last_seen:
-            days_inactive = (today.date() - last_seen.date()).days
-            date_str = last_seen.strftime('%d-%m-%Y')
-            return {
-                'alert': False,
-                'message': None,
-                'image': None,
-                'summary': f"OK: {player} (Ostatni post: {date_str}, {days_inactive} dni temu, MG nie czeka)."
-            }
-        
-        else:
-            msg = self._build_no_posts_alert(player_mention)
-            img = self.config.player_images.get(player)
-            return {'alert': True, 'message': msg, 'image': img, 'summary': None}
+            
+        return {'alert': False, 'message': None, 'image': None, 'image_tier2': None, 'summary': None}
 
     def _get_player_mention(self, player: str) -> str:
         role_id = self.config.player_discord_role_ids.get(player)
@@ -159,7 +148,7 @@ class ReminderBot:
         return f"**{player}**"
 
     def _build_gm_waiting_alert(self, player: str, player_mention: str, 
-                                gm_post_date: datetime, today: datetime) -> Tuple[str, Optional[str]]:
+                                gm_post_date: datetime, today: datetime) -> Tuple[str, Optional[str], Optional[str]]:
         days_waiting = (today.date() - gm_post_date.date()).days
         gm_date_str = gm_post_date.strftime('%d-%m-%Y')
         
@@ -169,17 +158,13 @@ class ReminderBot:
         )
         
         image_path = None
+        image_path_tier2 = None
         if days_waiting >= self.config.image_threshold_days:
             image_path = self.config.player_images.get(player)
+            if days_waiting >= self.config.image_threshold_days_tier2:
+                image_path_tier2 = self.config.player_images_tier2.get(player)
         
-        return msg, image_path
-
-    def _build_no_posts_alert(self, player_mention: str) -> str:
-        return (
-            f"⚠️ **Uwaga**: Gracz {player_mention} nie napisał "
-            f"żadnego posta w monitorowanych wątkach "
-            f"(sprawdzono ostatnie strony)."
-        )
+        return msg, image_path, image_path_tier2
 
     def _log_summary(self, summary_log: List[str]):
         logging.info("\n--- Summary ---")
@@ -187,11 +172,6 @@ class ReminderBot:
             logging.info(line)
 
     def _send_alerts(self, alerts: List[Tuple[str, Optional[str]]]):
-        """Send Discord notifications for all alerts.
-        
-        Args:
-            alerts: List of (message, image_path) tuples
-        """
         if not alerts:
             return
         
