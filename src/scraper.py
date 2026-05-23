@@ -75,12 +75,15 @@ class ForumScraper:
         logging.info(log_msg + "...")
         
         try:
-            response = self.session.get(url, allow_redirects=True)
+            response = self.session.get(url, allow_redirects=True, timeout=30)
             response.raise_for_status()
             actual_url = response.url
             soup = BeautifulSoup(response.text, 'html.parser')
             self._page_cache[actual_url] = soup
             return soup
+        except requests.Timeout:
+            logging.error(f"Timeout fetching {url} (>30s) - skipping")
+            return None
         except requests.RequestException as e:
             logging.error(f"Error fetching {url}: {e}")
             return None
