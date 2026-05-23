@@ -1,6 +1,7 @@
 services:
   discord-overseer:
     build: .
+    shm_size: '128m'
     image: discord-overseer:latest
     container_name: discord_overseer
     restart: unless-stopped
